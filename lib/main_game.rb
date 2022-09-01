@@ -13,21 +13,16 @@ class Game
     puts "Select player 1 color (white or black)"
     input = gets.chomp.downcase
     color = { 
-      "black" => BLACK,
-      "b" => BLACK,
-      "2" => BLACK,
-      "white" => WHITE,
-      "w" => WHITE,
-      "1" => WHITE
+      "black" => BLACK, "b" => BLACK, "2" => BLACK,
+      "white" => WHITE, "w" => WHITE, "1" => WHITE
     }
     until color[input] do
       puts "Insert a valid input"
       input = gets.chomp.downcase
     end
-    
     @current_turn = color[input]
-
     
+    gameplay_loop
   end
 
   def valid_play?(column)
@@ -70,17 +65,26 @@ class Game
         return true if diagonal_consecutive == 4
         previous_cell = @grid[xy.first][xy.last]
       end
-      
     end
     false
   end
   
+  def player_turn
+    puts "Select a position to play (1-7) #{@current_turn}"
+    input = valid_input
+    valid = place_color(input, @current_turn)
+    until valid do
+      puts "Select another position to play (1-7)"
+      input = valid_input
+      valid = place_color(input, @current_turn)
+    end
+  end
+
   def next_turn
     case @current_turn
     when WHITE then @current_turn = BLACK
     when BLACK then @current_turn = WHITE
     end
-    puts "Select a position to play (1-7)"
   end
   
   def empty_cell?(row, column)
@@ -99,6 +103,26 @@ class Game
   end
   
   private
+  def valid_input
+    input = gets.chomp
+    until (1..7).include?input.to_i do
+      puts 'invalid play, select a number between 1 and 7'
+      input = gets.chomp
+    end
+    input.to_i - 1
+  end
+
+  def gameplay_loop
+    until over = game_over? do
+      player_turn
+      next_turn
+      draw
+      # sleep(0.5)
+    end
+    puts "The winner is #{next_turn}"
+    true
+  end
+
   def get_diagonals
     diagonals = []
     for row in (0...6) do
@@ -123,3 +147,8 @@ class Game
     diagonals
   end
 end
+
+# Uncomment to play
+
+# game = Game.new
+# game.play

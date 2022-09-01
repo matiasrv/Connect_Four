@@ -104,4 +104,102 @@ describe Game do
       expect(game_over).to be_game_over
     end
   end
+  
+  context '#next_turn' do
+    subject(:game_next_turn) { described_class.new }
+    it 'It changes between black and white' do
+      allow(game_next_turn).to receive(:valid_input).and_return(1)
+      allow(game_next_turn).to receive(:puts)
+      initial_turn = game_next_turn.instance_variable_get(:@current_turn)
+      game_next_turn.next_turn
+      current_turn = game_next_turn.instance_variable_get(:@current_turn)
+      expect(current_turn).to eq(BLACK) || eq(WHITE)
+      expect(current_turn).not_to eq(initial_turn)
+    end
+  end
+  
+  context '#player_turn' do
+    subject(:game_player_turn) { described_class.new }
+
+    it 'asks the current color for a position to place their piece' do
+      allow(game_player_turn).to receive(:valid_input).and_return(1)
+      current = game_player_turn.instance_variable_get(:@current_turn)
+      message = "Select a position to play (1-7) #{current}"
+      expect(game_player_turn).to receive(:puts).with(message)
+      game_player_turn.player_turn
+    end
+    
+    it 'keeps asking until input is in range 1..7' do
+      expect(game_player_turn).to receive(:puts)
+      message = 'invalid play, select a number between 1 and 7'
+      invalid_one = '0'
+      invalid_two = '8'
+      valid = '5'
+      allow(game_player_turn).to receive(:gets).and_return(invalid_one, invalid_two, valid)
+      expect(game_player_turn).to receive(:puts).with(message).at_least(2).times
+      game_player_turn.player_turn
+    end
+    
+    it 'places the piece of the current player in the position choosed' do
+      allow(game_player_turn).to receive(:puts)
+      allow(game_player_turn).to receive(:gets).and_return("1")
+      current_player = game_player_turn.instance_variable_get(:@current_turn)
+      expect(game_player_turn).to receive(:place_color).and_return(current_player)
+      game_player_turn.player_turn
+    end
+
+    it 'keeps asking for an input if it is not a valid play' do
+      allow(game_player_turn).to receive(:valid_input).and_return(1, 1, 4)
+      allow(game_player_turn).to receive(:puts)
+      game_player_turn.place_color(1, BLACK)
+      game_player_turn.place_color(1, BLACK)
+      game_player_turn.place_color(1, WHITE)
+      game_player_turn.place_color(1, BLACK)
+      game_player_turn.place_color(1, BLACK)
+      game_player_turn.place_color(1, BLACK)
+      message = "Select another position to play (1-7)"
+      game_player_turn.player_turn
+      expect(game_player_turn).to have_received(:puts).with(message).twice
+    end
+  end
+  
+  context '#play' do
+    subject(:game_play) { described_class.new }
+    it 'asks for first player color' do
+      allow(game_play).to receive(:gameplay_loop)
+      allow(game_play).to receive(:gets).and_return("w")
+      message = "Select player 1 color (white or black)"
+      expect(game_play).to receive(:puts).with(message)
+      game_play.play
+    end
+
+    it 'asks for valid input twice until it is valid' do
+      allow(game_play).to receive(:gameplay_loop)
+      invalid_one = '12'
+      invalid_two = 'o'
+      message = "Insert a valid input"
+      allow(game_play).to receive(:gets).and_return(invalid_one, invalid_two, "w")
+      expect(game_play).to receive(:puts)
+      expect(game_play).to receive(:puts).with(message).at_least(2).times
+      game_play.play
+    end
+
+    it "set black as current player when user is prompted to select first player's color" do
+      allow(game_play).to receive(:gameplay_loop)
+      allow(game_play).to receive(:puts)
+      allow(game_play).to receive(:gets).and_return("black")
+      game_play.play
+      current = game_play.instance_variable_get(:@current_turn)
+      expect(current).to eq BLACK
+    end
+
+    it 'loops between players until game_over? triggers' do
+      allow(game_play).to receive(:puts)
+      allow(game_play).to receive(:print)
+      first_color = 'w'
+      allow(game_play).to receive(:gets).and_return(first_color,'1','2','1','2','1','2','1')
+      game_play.play
+      expect(game_play.game_over?).to be true
+    end
+  end
 end
